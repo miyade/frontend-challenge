@@ -68,26 +68,31 @@ const sortByUser = computed(() => {
  * Load specific user statistics
  */
 async function loadUserStatistics() {
-  for (const user of users.value) {
-    (user.albums = []), (user.posts = []), (user.comments = []);
+  // remove sequential awaits inside a loop
+  // make it run requests in parallel
+  await Promise.all(
+    users.value.map(async (user) => {
+      user.albums = [];
+      user.posts = [];
+      user.comments = [];
 
-    // Fetch user Albums
-    await fetch(`https://jsonplaceholder.typicode.com/users/${user.id}/albums`)
-      .then((res) => res.json())
-      .then((albums) => user.albums.push(...albums));
+      const [albums, posts, comments] = await Promise.all([
+        fetch(`https://jsonplaceholder.typicode.com/users/${user.id}/albums`).then(
+          (res) => res.json()
+        ),
+        fetch(`https://jsonplaceholder.typicode.com/users/${user.id}/posts`).then(
+          (res) => res.json()
+        ),
+        fetch(
+          `https://jsonplaceholder.typicode.com/users/${user.id}/comments`
+        ).then((res) => res.json()),
+      ]);
 
-    // Fetch user Posts
-    await fetch(`https://jsonplaceholder.typicode.com/users/${user.id}/posts`)
-      .then((res) => res.json())
-      .then((posts) => user.posts.push(...posts));
-
-    // Fetch user Comments
-    await fetch(
-      `https://jsonplaceholder.typicode.com/users/${user.id}/comments`
-    )
-      .then((res) => res.json())
-      .then((comments) => user.comments.push(...comments));
-  }
+      user.albums.push(...albums);
+      user.posts.push(...posts);
+      user.comments.push(...comments);
+    })
+  );
 }
 
 if (error.value) {
