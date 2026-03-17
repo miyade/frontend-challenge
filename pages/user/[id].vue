@@ -14,7 +14,7 @@
     </div>
     <ul class="todo-list">
       <li
-        v-for="todo in todos"
+        v-for="todo in visibleTodos"
         :key="todo.id"
         :completion-status="todo.completed ? 'completed' : 'pending'"
       >
@@ -22,6 +22,19 @@
         <p>Status: {{ todo.completed ? 'Completed' : 'Pending' }}</p>
       </li>
     </ul>
+    <div>
+      <button v-if="canLoadMore" type="button" @click="loadMore">Load more</button>
+      <button
+        v-if="canShowLess"
+        type="button"
+        @click="showLess"
+      >
+        Show less
+      </button>
+      <button v-if="showBackToTop" type="button" @click="scrollToTop">
+        Back to top
+      </button>
+    </div>
   </AwesomeArticle>
 </template>
 
@@ -45,4 +58,40 @@ const { data: todos } = useAsyncData(() =>
     `https://jsonplaceholder.typicode.com/users/${route.params.id}/todos`
   ).then((res) => res.json())
 );
+
+const PAGE_SIZE = 10;
+const visibleCount = ref(PAGE_SIZE);
+
+const visibleTodos = computed(() => (todos.value ?? []).slice(0, visibleCount.value));
+const canLoadMore = computed(
+  () => (todos.value?.length ?? 0) > visibleCount.value
+);
+const canShowLess = computed(() => visibleCount.value > PAGE_SIZE);
+
+function loadMore() {
+  visibleCount.value += PAGE_SIZE;
+}
+
+function showLess() {
+  visibleCount.value = PAGE_SIZE;
+}
+
+const showBackToTop = ref(false);
+
+function onScroll() {
+  showBackToTop.value = window.scrollY > 400;
+}
+
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+onMounted(() => {
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', onScroll);
+});
 </script>
