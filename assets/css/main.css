@@ -22,24 +22,32 @@ header {
 
 .wrapper {
   width: 100%;
-  white-space: nowrap;
+  /* used flex so nav/main/aside can sit in a row. */
+  display: flex;
+  /* items can wrap normally on smaller screens */
+  flex-wrap: wrap;
+  /* make alignment even */
+  align-items: start;
+  /* for consistent spacing between cols and rows when wrapping. */
+  gap: 15px;
+  /* adding a bit of padding so content isnt stuck to the edge. */
+  padding: 0 10px 15px;
 }
 
 nav {
-  display: inline-block;
-  vertical-align: top;
   background-color: #dbfbdb;
   padding: 10px;
-  height: 500px;
-  width: 20%;
+  /* allow sidebar to shrink/grow with minimum width. */
+  flex: 1 1 14rem;
 }
 
 main {
-  display: inline-block;
-  vertical-align: top;
   background-color: #e2eafc;
   padding: 20px;
-  width: 80%;
+  /* main content should take most of the available space on bigger screens. */
+  flex: 999 1 40rem;
+  /* so main doesnt become unusably narrow  */
+  min-width: min(100%, 20rem);
 
 }
 
@@ -61,6 +69,15 @@ article {
 aside {
   background-color: #fffacd;
   padding: 20px;
+  /* similar sizing behavior to nav. */
+  flex: 1 1 16rem;
+}
+
+/* making the homepage hero image responsive */
+main img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 footer {

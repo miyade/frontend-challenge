@@ -10,8 +10,8 @@
       </summary>
       <ChallengeDescription />
     </details>
-
-    <img src="/img.png" alt="User avatar" height="300" />
+    <!-- Removed the fixed height to make this more responsive and get smaller as screen size shrinks -->
+    <img src="/img.png" alt="User avatar" />
   </AwesomeSection>
   <UsersList />
 </template>
