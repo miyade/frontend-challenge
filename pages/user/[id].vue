@@ -5,20 +5,25 @@
       Filters:
       <span>
         <label for="completed">Show completed</label>
-        <input type="checkbox" id="completed" />
+        <input type="checkbox" id="completed" v-model="showCompleted" />
       </span>
       <span>
         <label for="pending">Show pending</label>
-        <input type="checkbox" id="pending" checked />
+        <input type="checkbox" id="pending" v-model="showPending" />
       </span>
     </div>
-    <ul class="todo-list">
+    <p v-if="pending">Loading…</p>
+    <p v-else-if="error" class="todo-error">
+      Failed to load todos: {{ error.message }}
+    </p>
+    <p v-else-if="filteredTodos.length === 0">No todos to display.</p>
+    <ul v-else class="todo-list">
       <li
         v-for="todo in visibleTodos"
         :key="todo.id"
         :completion-status="todo.completed ? 'completed' : 'pending'"
       >
-        <h4 :title="todo.title">{{ todo.title }}</h4>
+        <h4>{{ todo.title }}</h4>
         <p>Status: {{ todo.completed ? 'Completed' : 'Pending' }}</p>
       </li>
     </ul>
@@ -39,6 +44,10 @@
 </template>
 
 <style scoped>
+.todo-error {
+  color: #b00020;
+}
+
 /* when show completed is unchecked we hide completed todos. */
 .todo-filters:has(#completed:not(:checked)) + .todo-list li[completion-status='completed'] {
   display: none;
@@ -53,18 +62,50 @@
 <script setup>
 const route = useRoute();
 
-const { data: todos } = useAsyncData(() =>
-  fetch(
-    `https://jsonplaceholder.typicode.com/users/${route.params.id}/todos`
-  ).then((res) => res.json())
+const userId = computed(() => String(route.params.id ?? ''));
+
+const { data: todos, pending, error } = useAsyncData(
+  () => `user:${userId.value}:todos`,
+  () =>
+    fetch(
+      `https://jsonplaceholder.typicode.com/users/${userId.value}/todos`
+    ).then((res) => res.json()),
+  { watch: [userId] }
 );
+
+const showCompleted = ref(true);
+const showPending = ref(true);
 
 const PAGE_SIZE = 10;
 const visibleCount = ref(PAGE_SIZE);
 
-const visibleTodos = computed(() => (todos.value ?? []).slice(0, visibleCount.value));
+watch(userId, () => {
+  visibleCount.value = PAGE_SIZE;
+});
+
+watch([showCompleted, showPending], () => {
+  visibleCount.value = PAGE_SIZE;
+});
+
+const filteredTodos = computed(() => {
+  const list = todos.value ?? [];
+
+  // little UX decision here: if both are off we show all
+  if (!showCompleted.value && !showPending.value) {
+    return list;
+  }
+
+  return list.filter((todo) => {
+    if (todo.completed) return showCompleted.value;
+    return showPending.value;
+  });
+});
+
+const visibleTodos = computed(() =>
+  filteredTodos.value.slice(0, visibleCount.value)
+);
 const canLoadMore = computed(
-  () => (todos.value?.length ?? 0) > visibleCount.value
+  () => filteredTodos.value.length > visibleCount.value
 );
 const canShowLess = computed(() => visibleCount.value > PAGE_SIZE);
 
